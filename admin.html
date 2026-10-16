@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Administración - Biblioteca Ingeniería UC</title>
+  
+  <link rel="icon" href="data:,">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'uc-azul': '#003366',
+            'uc-azul-claro': '#00509e',
+            'uc-dorado': '#FFB81C',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+
+<body class="bg-gray-100 font-sans">
+
+  <!-- ============================================= -->
+  <!-- PANTALLA DE LOGIN (visible al inicio)        -->
+  <!-- ============================================= -->
+  <div id="pantalla-login" class="min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+      
+      <div class="text-center mb-6">
+        <div class="bg-uc-azul text-uc-dorado rounded-full p-4 text-3xl inline-block mb-3">
+          <i class="fas fa-lock"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-uc-azul">Panel de Administración</h1>
+        <p class="text-sm text-gray-500 mt-1">Biblioteca de Ingeniería UC</p>
+      </div>
+
+      <form id="form-login" class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Contraseña</label>
+          <input 
+            type="password" 
+            id="input-password"
+            required
+            placeholder="Ingresa la contraseña"
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-uc-azul">
+        </div>
+
+        <div id="mensaje-login" class="hidden text-sm text-center text-red-600"></div>
+
+        <button 
+          type="submit"
+          class="w-full bg-uc-azul hover:bg-uc-azul-claro text-white py-3 rounded-lg font-semibold transition">
+          <i class="fas fa-sign-in-alt mr-2"></i> Entrar
+        </button>
+      </form>
+
+      <div class="text-center mt-6">
+        <a href="index.html" class="text-sm text-gray-500 hover:text-uc-azul">
+          <i class="fas fa-arrow-left mr-1"></i> Volver al inicio
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- PANEL PRINCIPAL (oculto al inicio)           -->
+  <!-- ============================================= -->
+  <div id="panel-principal" class="hidden min-h-screen">
+
+    <!-- ENCABEZADO -->
+    <header class="bg-gradient-to-r from-uc-azul to-uc-azul-claro text-white shadow-lg">
+      <div class="container mx-auto px-6 py-5 flex items-center justify-between flex-wrap gap-3">
+        <div class="flex items-center gap-3">
+          <div class="bg-uc-dorado text-uc-azul rounded-full p-2 text-xl">
+            <i class="fas fa-user-shield"></i>
+          </div>
+          <div>
+            <h1 class="text-lg md:text-xl font-bold">Panel de Administración</h1>
+            <p class="text-uc-dorado text-xs">Biblioteca de Ingeniería UC</p>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <a href="index.html" class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full text-sm transition">
+            <i class="fas fa-home mr-1"></i> Ir al sitio
+          </a>
+          <button onclick="cerrarSesion()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-full text-sm transition">
+            <i class="fas fa-sign-out-alt mr-1"></i> Salir
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ESTADÍSTICAS -->
+    <div class="container mx-auto px-6 py-8">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+
+        <div class="bg-white rounded-2xl shadow-md p-6 border-l-4 border-yellow-500">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-500 font-semibold">PENDIENTES</p>
+              <p id="stat-pendientes" class="text-3xl font-bold text-yellow-600 mt-1">0</p>
+            </div>
+            <div class="bg-yellow-100 text-yellow-600 rounded-full p-3 text-2xl">
+              <i class="fas fa-clock"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-md p-6 border-l-4 border-green-500">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-500 font-semibold">APROBADOS</p>
+              <p id="stat-aprobados" class="text-3xl font-bold text-green-600 mt-1">0</p>
+            </div>
+            <div class="bg-green-100 text-green-600 rounded-full p-3 text-2xl">
+              <i class="fas fa-check-circle"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-md p-6 border-l-4 border-uc-azul">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-500 font-semibold">TOTAL</p>
+              <p id="stat-total" class="text-3xl font-bold text-uc-azul mt-1">0</p>
+            </div>
+            <div class="bg-blue-100 text-uc-azul rounded-full p-3 text-2xl">
+              <i class="fas fa-database"></i>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- PESTAÑAS -->
+      <div class="flex gap-2 mb-6 border-b border-gray-300">
+        <button 
+          id="tab-pendientes"
+          onclick="cambiarTab('pendientes')"
+          class="px-5 py-3 font-semibold text-yellow-600 border-b-4 border-yellow-500 transition">
+          <i class="fas fa-clock mr-2"></i> Pendientes
+          <span id="badge-pendientes" class="bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full ml-2">0</span>
+        </button>
+        <button 
+          id="tab-aprobados"
+          onclick="cambiarTab('aprobados')"
+          class="px-5 py-3 font-semibold text-gray-500 border-b-4 border-transparent hover:text-green-600 transition">
+          <i class="fas fa-check-circle mr-2"></i> Aprobados
+          <span id="badge-aprobados" class="bg-green-500 text-white text-xs px-2 py-0.5 rounded-full ml-2">0</span>
+        </button>
+      </div>
+
+      <!-- CONTENIDO DE PESTAÑAS -->
+      <div id="contenido-admin"></div>
+
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- MODAL DE CONFIRMACIÓN                        -->
+  <!-- ============================================= -->
+  <div id="modal-confirmar" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+      <div class="flex items-center gap-3 mb-4">
+        <div id="modal-icono" class="bg-red-100 text-red-600 rounded-full p-3 text-2xl">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h3 id="modal-titulo" class="text-xl font-bold text-gray-800">¿Estás seguro?</h3>
+      </div>
+      <p id="modal-mensaje" class="text-gray-600 mb-6"></p>
+      <div class="flex gap-3">
+        <button 
+          onclick="cerrarModalConfirmar()"
+          class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded-lg font-semibold transition">
+          Cancelar
+        </button>
+        <button 
+          id="btn-confirmar-accion"
+          class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg font-semibold transition">
+          Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =====================================================
+    // ⚠️ CONFIGURACIÓN: REEMPLAZA ESTAS 3 LÍNEAS
+    // =====================================================
+    const SUPABASE_URL = "https://jkfmhlvulrvaffgwonnc.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImprZm1obHZ1bHJ2YWZmZ3dvbm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxMDIzMDgsImV4cCI6MjEwNzY3ODMwOH0.mLrIYUrEeDDTTGz-ruyPkwpYg98T667OZmIky9Wr-gM";
+    const ADMIN_PASSWORD = "Gabo.2006";
+
+    // Inicializar cliente Supabase
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // =====================================================
+    // NOMBRES DE MATERIAS (para mostrarlos en el panel)
+    // =====================================================
+    const nombresMaterias = {
+      'calculo-diferencial': 'Cálculo Diferencial',
+      'geometria-analitica': 'Geometría Analítica',
+      'fundamentos-dibujo': 'Fundamentos de Dibujo para Ingeniería',
+      'fisica-mecanica': 'Física Mecánica',
+      'calculo-integral': 'Cálculo Integral',
+      'algebra-lineal': 'Álgebra Lineal',
+      'fundamentos-quimica': 'Fundamentos de Química General',
+      'fundamentos-programacion': 'Fundamentos de Programación',
+      'electricidad-magnetismo': 'Electricidad y Magnetismo',
+      'fisica-experimental': 'Física Experimental',
+      'funciones-vectoriales': 'Funciones Vectoriales y Ecuaciones Diferenciales',
+      'dibujo-mecanico': 'Dibujo Mecánico',
+      'fundamentos-mecanica-racional': 'Fundamentos de Mecánica Racional',
+      'matematicas-aplicadas': 'Matemáticas Aplicadas',
+      'electrotecnia': 'Electrotecnia',
+      'optica-acustica': 'Óptica y Acústica',
+      'mecanica-fluidos': 'Fundamentos de Mecánica de los Fluidos',
+      'estatica-cuerpos-solidos': 'Estática de los Cuerpos Sólidos',
+      'geometria-descriptiva': 'Geometría Descriptiva',
+      'geologia': 'Geología',
+      'quimica-analitica': 'Química Analítica',
+      'principios-ingenieria-quimica': 'Principios de Ingeniería Química',
+      'introduccion-termodinamica': 'Introducción a la Termodinámica',
+      'quimica-general-experimental': 'Química General Experimental',
+      'circuitos-electricos-dc': 'Circuitos Eléctricos en DC y Régimen Transitorio',
+      'fisica-electrica': 'Física Eléctrica',
+      'fisica-moderna-ondas': 'Física Moderna y Ondas',
+      'resistencia-materiales': 'Resistencia de Materiales Fundamental',
+      'probabilidades-electrica': 'Probabilidades Aplicada a la Ingeniería Eléctrica',
+      'programacion-aplicaciones': 'Programación de Aplicaciones en Ingeniería',
+      'termodinamica': 'Termodinámica',
+      'probabilidad-estadistica': 'Fundamentos de Probabilidad y Estadística',
+    };
+
+    // =====================================================
+    // ESTADO
+    // =====================================================
+    let tabActual = 'pendientes';
+    let datosPendientes = [];
+    let datosAprobados = [];
+    let accionPendiente = null;
+
+    // =====================================================
+    // LOGIN
+    // =====================================================
+    const formLogin = document.getElementById("form-login");
+    const inputPassword = document.getElementById("input-password");
+    const mensajeLogin = document.getElementById("mensaje-login");
+
+    formLogin.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const pass = inputPassword.value;
+
+      if (pass === ADMIN_PASSWORD) {
+        // Guardar sesión en el navegador
+        sessionStorage.setItem("admin_autenticado", "true");
+        mostrarPanel();
+      } else {
+        mensajeLogin.textContent = "❌ Contraseña incorrecta";
+        mensajeLogin.classList.remove("hidden");
+        inputPassword.value = "";
+      }
+    });
+
+    function cerrarSesion() {
+      sessionStorage.removeItem("admin_autenticado");
+      location.reload();
+    }
+
+    // Verificar si ya estaba autenticado
+    if (sessionStorage.getItem("admin_autenticado") === "true") {
+      mostrarPanel();
+    }
+
+    function mostrarPanel() {
+      document.getElementById("pantalla-login").classList.add("hidden");
+      document.getElementById("panel-principal").classList.remove("hidden");
+      cargarDatos();
+    }
+
+    // =====================================================
+    // CARGAR DATOS DE SUPABASE
+    // =====================================================
+    async function cargarDatos() {
+      try {
+        const { data, error } = await db
+          .from('pdfs')
+          .select('*')
+          .order('fecha', { ascending: false });
+
+        if (error) throw error;
+
+        datosPendientes = (data || []).filter(p => p.estado === 'pendiente');
+        datosAprobados = (data || []).filter(p => p.estado === 'aprobado');
+
+        // Actualizar estadísticas
+        document.getElementById("stat-pendientes").textContent = datosPendientes.length;
+        document.getElementById("stat-aprobados").textContent = datosAprobados.length;
+        document.getElementById("stat-total").textContent = data.length;
+        document.getElementById("badge-pendientes").textContent = datosPendientes.length;
+        document.getElementById("badge-aprobados").textContent = datosAprobados.length;
+
+        // Renderizar la pestaña actual
+        renderizarTab();
+
+      } catch (error) {
+        console.error("Error cargando datos:", error);
+        document.getElementById("contenido-admin").innerHTML = `
+          <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded">
+            <p class="text-sm text-red-800">
+              <i class="fas fa-exclamation-triangle mr-2"></i>
+              Error al cargar datos: ${error.message}
+            </p>
+          </div>
+        `;
+      }
+    }
+
+    // =====================================================
+    // CAMBIAR PESTAÑA
+    // =====================================================
+    function cambiarTab(tab) {
+      tabActual = tab;
+
+      // Actualizar estilos de los botones
+      const tabPend = document.getElementById("tab-pendientes");
+      const tabApro = document.getElementById("tab-aprobados");
+
+      if (tab === 'pendientes') {
+        tabPend.className = "px-5 py-3 font-semibold text-yellow-600 border-b-4 border-yellow-500 transition";
+        tabApro.className = "px-5 py-3 font-semibold text-gray-500 border-b-4 border-transparent hover:text-green-600 transition";
+      } else {
+        tabPend.className = "px-5 py-3 font-semibold text-gray-500 border-b-4 border-transparent hover:text-yellow-600 transition";
+        tabApro.className = "px-5 py-3 font-semibold text-green-600 border-b-4 border-green-500 transition";
+      }
+
+      renderizarTab();
+    }
+
+    // =====================================================
+    // RENDERIZAR CONTENIDO DE LA PESTAÑA ACTUAL
+    // =====================================================
+    function renderizarTab() {
+      const contenido = document.getElementById("contenido-admin");
+      const datos = tabActual === 'pendientes' ? datosPendientes : datosAprobados;
+
+      if (datos.length === 0) {
+        contenido.innerHTML = `
+          <div class="bg-white rounded-2xl shadow-md p-12 text-center">
+            <div class="text-6xl text-gray-300 mb-4">
+              <i class="fas fa-${tabActual === 'pendientes' ? 'check-circle' : 'folder-open'}"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-700 mb-2">
+              ${tabActual === 'pendientes' ? '¡Todo al día!' : 'No hay documentos aprobados'}
+            </h3>
+            <p class="text-gray-500">
+              ${tabActual === 'pendientes' ? 'No hay PDFs pendientes de revisión.' : 'Los PDFs aprobados aparecerán aquí.'}
+            </p>
+          </div>
+        `;
+        return;
+      }
+
+      // Crear lista de tarjetas
+      const lista = document.createElement("div");
+      lista.className = "space-y-4";
+
+      datos.forEach((pdf) => {
+        const fecha = new Date(pdf.fecha).toLocaleDateString('es-VE', {
+          year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+
+        const nombreMateria = nombresMaterias[pdf.materia_id] || pdf.materia_id;
+
+        const { data: urlData } = db
+          .storage
+          .from('pdfs')
+          .getPublicUrl(pdf.archivo_url);
+
+        const urlPublica = urlData.publicUrl;
+
+        const card = document.createElement("div");
+        card.className = "bg-white rounded-2xl shadow-md p-5 border-l-4 " + 
+          (tabActual === 'pendientes' ? 'border-yellow-500' : 'border-green-500');
+
+        const botonesAccion = tabActual === 'pendientes' 
+          ? `
+            <button onclick="aprobarPdf('${pdf.id}')" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
+              <i class="fas fa-check mr-1"></i> Aprobar
+            </button>
+            <button onclick="rechazarPdf('${pdf.id}', '${pdf.archivo_url}')" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
+              <i class="fas fa-times mr-1"></i> Rechazar
+            </button>
+          `
+          : `
+            <button onclick="borrarPdf('${pdf.id}', '${pdf.archivo_url}')" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
+              <i class="fas fa-trash mr-1"></i> Borrar
+            </button>
+          `;
+
+        card.innerHTML = `
+          <div class="flex flex-col md:flex-row md:items-start gap-4">
+            <div class="bg-red-100 text-red-600 rounded-lg p-3 text-2xl flex-shrink-0">
+              <i class="fas fa-file-pdf"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-bold text-gray-800 text-lg">${pdf.titulo}</h3>
+              <p class="text-sm text-gray-500 mt-1">${pdf.descripcion || 'Sin descripción'}</p>
+              <div class="text-xs text-gray-500 mt-3 space-y-1">
+                <p><i class="fas fa-book mr-2 text-uc-azul"></i><strong>Materia:</strong> ${nombreMateria}</p>
+                ${pdf.autor ? `<p><i class="fas fa-user-edit mr-2 text-uc-azul"></i><strong>Autor:</strong> ${pdf.autor}</p>` : ''}
+                <p><i class="fas fa-calendar mr-2 text-uc-azul"></i><strong>Subido:</strong> ${fecha}</p>
+              </div>
+            </div>
+            <div class="flex flex-col gap-2">
+              <a href="${urlPublica}" target="_blank" class="bg-uc-azul hover:bg-uc-azul-claro text-white px-4 py-2 rounded-lg text-sm font-semibold transition text-center">
+                <i class="fas fa-eye mr-1"></i> Ver PDF
+              </a>
+              ${botonesAccion}
+            </div>
+          </div>
+        `;
+
+        lista.appendChild(card);
+      });
+
+      contenido.innerHTML = "";
+      contenido.appendChild(lista);
+    }
+
+    // =====================================================
+    // ACCIONES: APROBAR / RECHAZAR / BORRAR
+    // =====================================================
+
+    // Modal de confirmación
+    const modalConfirmar = document.getElementById("modal-confirmar");
+
+    function mostrarModalConfirmar(titulo, mensaje, textoBoton, colorBoton, callback) {
+      document.getElementById("modal-titulo").textContent = titulo;
+      document.getElementById("modal-mensaje").textContent = mensaje;
+      
+      const btn = document.getElementById("btn-confirmar-accion");
+      btn.textContent = textoBoton;
+      btn.className = `flex-1 ${colorBoton} text-white py-2 rounded-lg font-semibold transition`;
+      
+      accionPendiente = callback;
+      modalConfirmar.classList.remove("hidden");
+    }
+
+    function cerrarModalConfirmar() {
+      modalConfirmar.classList.add("hidden");
+      accionPendiente = null;
+    }
+
+    document.getElementById("btn-confirmar-accion").addEventListener("click", () => {
+      if (accionPendiente) accionPendiente();
+      cerrarModalConfirmar();
+    });
+
+    modalConfirmar.addEventListener("click", (e) => {
+      if (e.target === modalConfirmar) cerrarModalConfirmar();
+    });
+
+    // --- APROBAR ---
+    function aprobarPdf(id) {
+      mostrarModalConfirmar(
+        "¿Aprobar este PDF?",
+        "El documento será visible para todos los estudiantes.",
+        "Sí, aprobar",
+        "bg-green-500 hover:bg-green-600",
+        async () => {
+          const { error } = await db
+            .from('pdfs')
+            .update({ estado: 'aprobado' })
+            .eq('id', id);
+
+          if (error) {
+            alert("Error al aprobar: " + error.message);
+            return;
+          }
+          cargarDatos();
+        }
+      );
+    }
+
+    // --- RECHAZAR ---
+    function rechazarPdf(id, rutaArchivo) {
+      mostrarModalConfirmar(
+        "¿Rechazar este PDF?",
+        "El documento se eliminará permanentemente. Esta acción no se puede deshacer.",
+        "Sí, rechazar",
+        "bg-red-500 hover:bg-red-600",
+        async () => {
+          // 1) Borrar de la base de datos
+          const { error: errorDB } = await db
+            .from('pdfs')
+            .delete()
+            .eq('id', id);
+
+          if (errorDB) {
+            alert("Error al rechazar: " + errorDB.message);
+            return;
+          }
+
+          // 2) Borrar el archivo del Storage
+          const { error: errorStorage } = await db
+            .storage
+            .from('pdfs')
+            .remove([rutaArchivo]);
+
+          if (errorStorage) {
+            console.warn("No se pudo borrar el archivo del Storage:", errorStorage);
+          }
+
+          cargarDatos();
+        }
+      );
+    }
+
+    // --- BORRAR (aprobado) ---
+    function borrarPdf(id, rutaArchivo) {
+      mostrarModalConfirmar(
+        "¿Borrar este PDF aprobado?",
+        "El documento se eliminará permanentemente y ya no será visible para los estudiantes.",
+        "Sí, borrar",
+        "bg-red-500 hover:bg-red-600",
+        async () => {
+          // 1) Borrar de la base de datos
+          const { error: errorDB } = await db
+            .from('pdfs')
+            .delete()
+            .eq('id', id);
+
+          if (errorDB) {
+            alert("Error al borrar: " + errorDB.message);
+            return;
+          }
+
+          // 2) Borrar el archivo del Storage
+          const { error: errorStorage } = await db
+            .storage
+            .from('pdfs')
+            .remove([rutaArchivo]);
+
+          if (errorStorage) {
+            console.warn("No se pudo borrar el archivo del Storage:", errorStorage);
+          }
+
+          cargarDatos();
+        }
+      );
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Materias - Biblioteca de Ingeniería UC</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'uc-azul': '#003366',
+            'uc-azul-claro': '#00509e',
+            'uc-dorado': '#FFB81C',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+
+<body class="bg-gray-50 font-sans">
+
+  <!-- ENCABEZADO -->
+  <header class="bg-gradient-to-r from-uc-azul to-uc-azul-claro text-white shadow-lg">
+    <div class="container mx-auto px-6 py-6 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3 hover:opacity-90 transition">
+        <div class="bg-uc-dorado text-uc-azul rounded-full p-2 text-xl">
+          <i class="fas fa-book-open"></i>
+        </div>
+        <div>
+          <h1 class="text-lg md:text-xl font-bold">Biblioteca de Ingeniería UC</h1>
+          <p class="text-uc-dorado text-xs">Material de estudio</p>
+        </div>
+      </a>
+      <a href="index.html" class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full text-sm transition">
+        <i class="fas fa-home mr-2"></i> Inicio
+      </a>
+    </div>
+  </header>
+
+  <!-- BREADCRUMB -->
+  <div class="container mx-auto px-6 pt-6">
+    <nav class="text-sm text-gray-600">
+      <a href="index.html" class="hover:text-uc-azul">Inicio</a>
+      <i class="fas fa-chevron-right mx-2 text-xs"></i>
+      <span id="breadcrumb-seccion" class="font-semibold text-uc-azul">Cargando...</span>
+    </nav>
+  </div>
+
+  <!-- CONTENIDO -->
+  <main class="container mx-auto px-6 py-8">
+
+    <div class="flex items-center gap-3 mb-8">
+      <div id="icono-seccion" class="text-white rounded-lg p-3 text-2xl">
+        <i class="fas fa-book"></i>
+      </div>
+      <div>
+        <h2 id="titulo-seccion" class="text-3xl font-bold text-uc-azul">Cargando...</h2>
+        <p id="descripcion-seccion" class="text-gray-600 text-sm"></p>
+      </div>
+    </div>
+
+    <div id="grid-materias" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+  </main>
+
+  <footer class="bg-uc-azul text-white mt-16">
+    <div class="container mx-auto px-6 py-8 text-center">
+      <p class="text-sm">
+        <i class="fas fa-book mr-2 text-uc-dorado"></i>
+        Biblioteca Virtual - Facultad de Ingeniería · Universidad de Carabobo
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    // =====================================================
+    // BASE DE DATOS DE MATERIAS
+    // Cada materia tiene: id único, nombre, escuelas donde aparece
+    // Si una materia aparece en varias escuelas → se marca compartida
+    // =====================================================
+    const materias = {
+      // -------- CICLO BÁSICO --------
+      'calculo-diferencial': { nombre: 'Cálculo Diferencial', escuelas: ['basico'] },
+      'geometria-analitica': { nombre: 'Geometría Analítica', escuelas: ['basico'] },
+      'fundamentos-dibujo': { nombre: 'Fundamentos de Dibujo para Ingeniería', escuelas: ['basico'] },
+      'fisica-mecanica': { nombre: 'Física Mecánica', escuelas: ['basico'] },
+      'calculo-integral': { nombre: 'Cálculo Integral', escuelas: ['basico'] },
+      'algebra-lineal': { nombre: 'Álgebra Lineal', escuelas: ['basico'] },
+      'fundamentos-quimica': { nombre: 'Fundamentos de Química General', escuelas: ['basico'] },
+      'fundamentos-programacion': { nombre: 'Fundamentos de Programación', escuelas: ['basico'] },
+      'electricidad-magnetismo': { nombre: 'Electricidad y Magnetismo', escuelas: ['basico'] },
+      'fisica-experimental': { nombre: 'Física Experimental', escuelas: ['basico'] },
+      'funciones-vectoriales': { nombre: 'Funciones Vectoriales y Ecuaciones Diferenciales', escuelas: ['basico'] },
+
+      // -------- MECÁNICA --------
+      'dibujo-mecanico': { nombre: 'Dibujo Mecánico', escuelas: ['mecanica'] },
+      'fundamentos-mecanica-racional': { nombre: 'Fundamentos de Mecánica Racional', escuelas: ['mecanica', 'quimica', 'industrial'] },
+      'matematicas-aplicadas': { nombre: 'Matemáticas Aplicadas', escuelas: ['mecanica', 'electrica', 'telecom'] },
+      'electrotecnia': { nombre: 'Electrotecnia', escuelas: ['mecanica', 'industrial'] },
+
+      // -------- CIVIL --------
+      'optica-acustica': { nombre: 'Óptica y Acústica', escuelas: ['civil', 'quimica', 'industrial'] },
+      'mecanica-fluidos': { nombre: 'Fundamentos de Mecánica de los Fluidos', escuelas: ['civil'] },
+      'estatica-cuerpos-solidos': { nombre: 'Estática de los Cuerpos Sólidos', escuelas: ['civil'] },
+      'geometria-descriptiva': { nombre: 'Geometría Descriptiva', escuelas: ['civil'] },
+      'geologia': { nombre: 'Geología', escuelas: ['civil'] },
+
+      // -------- QUÍMICA --------
+      'quimica-analitica': { nombre: 'Química Analítica', escuelas: ['quimica'] },
+      'principios-ingenieria-quimica': { nombre: 'Principios de Ingeniería Química', escuelas: ['quimica'] },
+      'introduccion-termodinamica': { nombre: 'Introducción a la Termodinámica', escuelas: ['quimica'] },
+      'quimica-general-experimental': { nombre: 'Química General Experimental', escuelas: ['quimica'] },
+
+      // -------- ELÉCTRICA --------
+      'circuitos-electricos-dc': { nombre: 'Circuitos Eléctricos en DC y Régimen Transitorio', escuelas: ['electrica', 'telecom'] },
+      'fisica-electrica': { nombre: 'Física Eléctrica', escuelas: ['electrica', 'telecom'] },
+      'fisica-moderna-ondas': { nombre: 'Física Moderna y Ondas', escuelas: ['electrica', 'telecom'] },
+      'resistencia-materiales': { nombre: 'Resistencia de Materiales Fundamental', escuelas: ['electrica'] },
+      'probabilidades-electrica': { nombre: 'Probabilidades Aplicada a la Ingeniería Eléctrica', escuelas: ['electrica'] },
+
+      // -------- TELECOMUNICACIONES --------
+      'programacion-aplicaciones': { nombre: 'Programación de Aplicaciones en Ingeniería', escuelas: ['telecom'] },
+
+      // -------- INDUSTRIAL --------
+      'termodinamica': { nombre: 'Termodinámica', escuelas: ['industrial'] },
+      'probabilidad-estadistica': { nombre: 'Fundamentos de Probabilidad y Estadística', escuelas: ['industrial'] },
+    };
+
+    // =====================================================
+    // INFORMACIÓN DE CADA SECCIÓN
+    // =====================================================
+    const secciones = {
+      basico: {
+        nombre: "Ciclo Básico",
+        descripcion: "Materias comunes a todas las ingenierías (1er a 3er semestre)",
+        icono: "fa-layer-group",
+        color: "bg-uc-dorado",
+        colorTexto: "text-uc-azul",
+        colorHex: "#FFB81C"
+      },
+      mecanica: {
+        nombre: "Ingeniería Mecánica",
+        descripcion: "Diseño, termodinámica, materiales y manufactura",
+        icono: "fa-gears",
+        color: "bg-red-500",
+        colorTexto: "text-red-500",
+        colorHex: "#ef4444"
+      },
+      civil: {
+        nombre: "Ingeniería Civil",
+        descripcion: "Estructuras, hidráulica, geotecnia y vías",
+        icono: "fa-building",
+        color: "bg-yellow-500",
+        colorTexto: "text-yellow-600",
+        colorHex: "#eab308"
+      },
+      quimica: {
+        nombre: "Ingeniería Química",
+        descripcion: "Procesos, reactores y termodinámica química",
+        icono: "fa-flask",
+        color: "bg-green-500",
+        colorTexto: "text-green-600",
+        colorHex: "#22c55e"
+      },
+      electrica: {
+        nombre: "Ingeniería Eléctrica",
+        descripcion: "Circuitos, potencia, control y máquinas eléctricas",
+        icono: "fa-bolt",
+        color: "bg-blue-500",
+        colorTexto: "text-blue-600",
+        colorHex: "#3b82f6"
+      },
+      telecom: {
+        nombre: "Ingeniería de Telecomunicaciones",
+        descripcion: "Señales, redes, antenas y comunicaciones digitales",
+        icono: "fa-satellite-dish",
+        color: "bg-purple-500",
+        colorTexto: "text-purple-600",
+        colorHex: "#a855f7"
+      },
+      industrial: {
+        nombre: "Ingeniería Industrial",
+        descripcion: "Procesos, producción, optimización y logística",
+        icono: "fa-industry",
+        color: "bg-orange-500",
+        colorTexto: "text-orange-600",
+        colorHex: "#f97316"
+      }
+    };
+
+    // Nombres "bonitos" para mostrar en la etiqueta de compartida
+    const nombresEscuelas = {
+      basico: "Ciclo Básico",
+      mecanica: "Mecánica",
+      civil: "Civil",
+      quimica: "Química",
+      electrica: "Eléctrica",
+      telecom: "Telecom",
+      industrial: "Industrial"
+    };
+
+    // =====================================================
+    // LEER PARÁMETRO Y RENDERIZAR
+    // =====================================================
+    const params = new URLSearchParams(window.location.search);
+    const seccionActual = params.get("seccion") || "basico";
+    const datos = secciones[seccionActual];
+
+    if (datos) {
+      document.title = datos.nombre + " - Biblioteca de Ingeniería UC";
+      document.getElementById("breadcrumb-seccion").textContent = datos.nombre;
+
+      const iconoContenedor = document.getElementById("icono-seccion");
+      iconoContenedor.classList.add(datos.color);
+      iconoContenedor.innerHTML = `<i class="fas ${datos.icono}"></i>`;
+
+      document.getElementById("titulo-seccion").textContent = datos.nombre;
+      document.getElementById("descripcion-seccion").textContent = datos.descripcion;
+
+      // Filtrar materias que pertenecen a esta sección
+      const grid = document.getElementById("grid-materias");
+      
+      const materiasDeEstaSeccion = Object.entries(materias).filter(([id, materia]) => 
+        materia.escuelas.includes(seccionActual)
+      );
+
+      materiasDeEstaSeccion.forEach(([id, materia], index) => {
+        // Detectar si es compartida
+        const esCompartida = materia.escuelas.length > 1;
+        const otrasEscuelas = materia.escuelas
+          .filter(e => e !== seccionActual)
+          .map(e => nombresEscuelas[e]);
+
+        const tarjeta = document.createElement("a");
+        tarjeta.href = `materia.html?id=${id}`;
+        tarjeta.className = `
+          bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 
+          p-6 border-t-4 hover:-translate-y-1 cursor-pointer block relative
+        `;
+        tarjeta.style.borderTopColor = datos.colorHex;
+
+        // Etiqueta de compartida
+        const etiquetaCompartida = esCompartida 
+          ? `<span class="absolute top-3 right-3 bg-uc-dorado text-uc-azul text-xs px-2 py-1 rounded-full font-semibold">
+              <i class="fas fa-share-nodes mr-1"></i> Compartida
+            </span>`
+          : `<span class="absolute top-3 right-3 text-xs text-gray-400">Materia ${index + 1}</span>`;
+
+        // Texto de "también en..."
+        const tambienEn = esCompartida
+          ? `<p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-100">
+              <i class="fas fa-info-circle mr-1 text-uc-dorado"></i>
+              También en: <span class="font-semibold">${otrasEscuelas.join(", ")}</span>
+            </p>`
+          : '';
+
+        tarjeta.innerHTML = `
+          ${etiquetaCompartida}
+          <div class="bg-gray-100 ${datos.colorTexto} rounded-lg p-2 text-lg inline-block mb-3">
+            <i class="fas fa-file-pdf"></i>
+          </div>
+          <h3 class="text-lg font-bold text-gray-800 mb-2 pr-16">${materia.nombre}</h3>
+          <p class="text-gray-500 text-sm">Ver documentos disponibles</p>
+          ${tambienEn}
+          <div class="mt-4 flex items-center justify-end ${datos.colorTexto} text-sm font-semibold">
+            Ver PDFs <i class="fas fa-arrow-right ml-2"></i>
+          </div>
+        `;
+
+        grid.appendChild(tarjeta);
+      });
+
+    } else {
+      document.getElementById("titulo-seccion").textContent = "Sección no encontrada";
+      document.getElementById("descripcion-seccion").textContent = "Verifica el enlace o vuelve al inicio.";
+    }
+  </script>
+
+</body>
+</html>

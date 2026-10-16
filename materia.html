@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Materia - Biblioteca de Ingeniería UC</title>
+  
+  <link rel="icon" href="data:,">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  
+  <!-- Cliente de Supabase (por CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'uc-azul': '#003366',
+            'uc-azul-claro': '#00509e',
+            'uc-dorado': '#FFB81C',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+
+<body class="bg-gray-50 font-sans">
+
+  <!-- ENCABEZADO -->
+  <header class="bg-gradient-to-r from-uc-azul to-uc-azul-claro text-white shadow-lg">
+    <div class="container mx-auto px-6 py-6 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3 hover:opacity-90 transition">
+        <div class="bg-uc-dorado text-uc-azul rounded-full p-2 text-xl">
+          <i class="fas fa-book-open"></i>
+        </div>
+        <div>
+          <h1 class="text-lg md:text-xl font-bold">Biblioteca de Ingeniería UC</h1>
+          <p class="text-uc-dorado text-xs">Material de estudio</p>
+        </div>
+      </a>
+      <a href="index.html" class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full text-sm transition">
+        <i class="fas fa-home mr-2"></i> Inicio
+      </a>
+    </div>
+  </header>
+
+  <!-- BREADCRUMB -->
+  <div class="container mx-auto px-6 pt-6">
+    <nav class="text-sm text-gray-600">
+      <a href="index.html" class="hover:text-uc-azul">Inicio</a>
+      <i class="fas fa-chevron-right mx-2 text-xs"></i>
+      <a id="breadcrumb-escuela" href="#" class="hover:text-uc-azul">Cargando...</a>
+      <i class="fas fa-chevron-right mx-2 text-xs"></i>
+      <span id="breadcrumb-materia" class="font-semibold text-uc-azul">Cargando...</span>
+    </nav>
+  </div>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="container mx-auto px-6 py-8">
+
+    <div class="bg-white rounded-2xl shadow-md p-6 mb-8 border-l-4 border-uc-dorado">
+      <div class="flex items-start justify-between gap-4 flex-wrap">
+        <div class="flex items-center gap-4">
+          <div class="bg-red-100 text-red-600 rounded-full p-4 text-2xl">
+            <i class="fas fa-file-pdf"></i>
+          </div>
+          <div>
+            <h2 id="titulo-materia" class="text-2xl md:text-3xl font-bold text-uc-azul">Cargando...</h2>
+            <p id="info-materia" class="text-gray-600 text-sm mt-1"></p>
+          </div>
+        </div>
+        <button 
+          id="btn-abrir-subida"
+          class="bg-uc-azul hover:bg-uc-azul-claro text-white px-5 py-3 rounded-full font-semibold transition shadow-md flex items-center gap-2">
+          <i class="fas fa-cloud-upload-alt"></i>
+          Subir PDF
+        </button>
+      </div>
+    </div>
+
+    <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
+      <h3 class="text-xl font-bold text-uc-azul">
+        <i class="fas fa-folder-open mr-2"></i>
+        Documentos disponibles
+        <span id="contador-pdfs" class="text-sm font-normal text-gray-500 ml-2"></span>
+      </h3>
+    </div>
+
+    <!-- Mensaje de carga -->
+    <div id="cargando" class="text-center py-12">
+      <i class="fas fa-spinner fa-spin text-4xl text-uc-azul"></i>
+      <p class="text-gray-500 mt-3">Cargando documentos...</p>
+    </div>
+
+    <div id="lista-pdfs" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+
+    <div id="sin-pdfs" class="hidden bg-white rounded-2xl shadow-md p-12 text-center">
+      <div class="text-6xl text-gray-300 mb-4">
+        <i class="fas fa-folder-open"></i>
+      </div>
+      <h3 class="text-xl font-bold text-gray-700 mb-2">Aún no hay documentos</h3>
+      <p class="text-gray-500 mb-6">Sé el primero en compartir material de esta materia.</p>
+      <button 
+        onclick="document.getElementById('btn-abrir-subida').click()"
+        class="bg-uc-azul hover:bg-uc-azul-claro text-white px-6 py-3 rounded-full font-semibold transition shadow-md">
+        <i class="fas fa-cloud-upload-alt mr-2"></i> Subir el primer PDF
+      </button>
+    </div>
+
+    <!-- Mensaje de error (oculto) -->
+    <div id="mensaje-error" class="hidden bg-red-50 border-l-4 border-red-400 p-4 rounded mt-4">
+      <p class="text-sm text-red-800">
+        <i class="fas fa-exclamation-triangle mr-2"></i>
+        <span id="texto-error"></span>
+      </p>
+    </div>
+
+  </main>
+
+  <!-- MODAL: SUBIR PDF -->
+  <div id="modal-subida" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 relative">
+      
+      <button 
+        onclick="cerrarModal()"
+        class="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-2xl">
+        <i class="fas fa-times"></i>
+      </button>
+
+      <div class="flex items-center gap-3 mb-5">
+        <div class="bg-uc-dorado text-uc-azul rounded-full p-2 text-xl">
+          <i class="fas fa-cloud-upload-alt"></i>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-uc-azul">Subir un PDF</h3>
+          <p class="text-xs text-gray-500">Tu aporte será revisado antes de publicarse</p>
+        </div>
+      </div>
+
+      <form id="form-subida" class="space-y-4">
+        
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Título del documento *</label>
+          <input 
+            type="text" 
+            id="input-titulo"
+            required
+            placeholder="Ej: Guía de ejercicios resueltos - Tema 3"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-uc-azul">
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Descripción (opcional)</label>
+          <textarea 
+            id="input-descripcion"
+            rows="3"
+            placeholder="Cuéntanos brevemente de qué trata..."
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-uc-azul"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Tu nombre (opcional)</label>
+          <input 
+            type="text" 
+            id="input-autor"
+            placeholder="Ej: María Pérez"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-uc-azul">
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Archivo PDF *</label>
+          <input 
+            type="file" 
+            id="input-archivo"
+            accept="application/pdf"
+            required
+            class="w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-uc-azul file:text-white file:font-semibold hover:file:bg-uc-azul-claro cursor-pointer">
+          <p class="text-xs text-gray-400 mt-1">Solo archivos PDF · Máximo 20 MB</p>
+        </div>
+
+        <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
+          <p class="text-xs text-blue-800">
+            <i class="fas fa-info-circle mr-1"></i>
+            Al enviar, tu archivo quedará en revisión. Un administrador lo aprobará antes de que sea visible para todos.
+          </p>
+        </div>
+
+        <div id="mensaje-progreso" class="hidden text-sm text-center"></div>
+
+        <div class="flex gap-3 pt-2">
+          <button 
+            type="button"
+            onclick="cerrarModal()"
+            class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded-lg font-semibold transition">
+            Cancelar
+          </button>
+          <button 
+            type="submit"
+            id="btn-enviar"
+            class="flex-1 bg-uc-azul hover:bg-uc-azul-claro text-white py-2 rounded-lg font-semibold transition">
+            <i class="fas fa-paper-plane mr-2"></i> Enviar
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <footer class="bg-uc-azul text-white mt-16">
+    <div class="container mx-auto px-6 py-8 text-center">
+      <p class="text-sm">
+        <i class="fas fa-book mr-2 text-uc-dorado"></i>
+        Biblioteca Virtual - Facultad de Ingeniería · Universidad de Carabobo
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    // =====================================================
+    // ⚠️ CONFIGURACIÓN: REEMPLAZA ESTAS 2 LÍNEAS
+    // =====================================================
+    const SUPABASE_URL = "https://jkfmhlvulrvaffgwonnc.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImprZm1obHZ1bHJ2YWZmZ3dvbm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxMDIzMDgsImV4cCI6MjEwNzY3ODMwOH0.mLrIYUrEeDDTTGz-ruyPkwpYg98T667OZmIky9Wr-gM";
+
+    // Inicializar cliente (usamos 'db' para evitar conflicto con la variable global de Supabase)
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // =====================================================
+    // BASE DE MATERIAS
+    // =====================================================
+    const materias = {
+      'calculo-diferencial': { nombre: 'Cálculo Diferencial', escuelas: ['basico'] },
+      'geometria-analitica': { nombre: 'Geometría Analítica', escuelas: ['basico'] },
+      'fundamentos-dibujo': { nombre: 'Fundamentos de Dibujo para Ingeniería', escuelas: ['basico'] },
+      'fisica-mecanica': { nombre: 'Física Mecánica', escuelas: ['basico'] },
+      'calculo-integral': { nombre: 'Cálculo Integral', escuelas: ['basico'] },
+      'algebra-lineal': { nombre: 'Álgebra Lineal', escuelas: ['basico'] },
+      'fundamentos-quimica': { nombre: 'Fundamentos de Química General', escuelas: ['basico'] },
+      'fundamentos-programacion': { nombre: 'Fundamentos de Programación', escuelas: ['basico'] },
+      'electricidad-magnetismo': { nombre: 'Electricidad y Magnetismo', escuelas: ['basico'] },
+      'fisica-experimental': { nombre: 'Física Experimental', escuelas: ['basico'] },
+      'funciones-vectoriales': { nombre: 'Funciones Vectoriales y Ecuaciones Diferenciales', escuelas: ['basico'] },
+      'dibujo-mecanico': { nombre: 'Dibujo Mecánico', escuelas: ['mecanica'] },
+      'fundamentos-mecanica-racional': { nombre: 'Fundamentos de Mecánica Racional', escuelas: ['mecanica', 'quimica', 'industrial'] },
+      'matematicas-aplicadas': { nombre: 'Matemáticas Aplicadas', escuelas: ['mecanica', 'electrica', 'telecom'] },
+      'electrotecnia': { nombre: 'Electrotecnia', escuelas: ['mecanica', 'industrial'] },
+      'optica-acustica': { nombre: 'Óptica y Acústica', escuelas: ['civil', 'quimica', 'industrial'] },
+      'mecanica-fluidos': { nombre: 'Fundamentos de Mecánica de los Fluidos', escuelas: ['civil'] },
+      'estatica-cuerpos-solidos': { nombre: 'Estática de los Cuerpos Sólidos', escuelas: ['civil'] },
+      'geometria-descriptiva': { nombre: 'Geometría Descriptiva', escuelas: ['civil'] },
+      'geologia': { nombre: 'Geología', escuelas: ['civil'] },
+      'quimica-analitica': { nombre: 'Química Analítica', escuelas: ['quimica'] },
+      'principios-ingenieria-quimica': { nombre: 'Principios de Ingeniería Química', escuelas: ['quimica'] },
+      'introduccion-termodinamica': { nombre: 'Introducción a la Termodinámica', escuelas: ['quimica'] },
+      'quimica-general-experimental': { nombre: 'Química General Experimental', escuelas: ['quimica'] },
+      'circuitos-electricos-dc': { nombre: 'Circuitos Eléctricos en DC y Régimen Transitorio', escuelas: ['electrica', 'telecom'] },
+      'fisica-electrica': { nombre: 'Física Eléctrica', escuelas: ['electrica', 'telecom'] },
+      'fisica-moderna-ondas': { nombre: 'Física Moderna y Ondas', escuelas: ['electrica', 'telecom'] },
+      'resistencia-materiales': { nombre: 'Resistencia de Materiales Fundamental', escuelas: ['electrica'] },
+      'probabilidades-electrica': { nombre: 'Probabilidades Aplicada a la Ingeniería Eléctrica', escuelas: ['electrica'] },
+      'programacion-aplicaciones': { nombre: 'Programación de Aplicaciones en Ingeniería', escuelas: ['telecom'] },
+      'termodinamica': { nombre: 'Termodinámica', escuelas: ['industrial'] },
+      'probabilidad-estadistica': { nombre: 'Fundamentos de Probabilidad y Estadística', escuelas: ['industrial'] },
+    };
+
+    const secciones = {
+      basico: { nombre: "Ciclo Básico" },
+      mecanica: { nombre: "Mecánica" },
+      civil: { nombre: "Civil" },
+      quimica: { nombre: "Química" },
+      electrica: { nombre: "Eléctrica" },
+      telecom: { nombre: "Telecom" },
+      industrial: { nombre: "Industrial" }
+    };
+
+    // =====================================================
+    // LEER PARÁMETRO ?id=...
+    // =====================================================
+    const params = new URLSearchParams(window.location.search);
+    const materiaId = params.get("id");
+    const materia = materias[materiaId];
+
+    if (materia) {
+      document.title = materia.nombre + " - Biblioteca de Ingeniería UC";
+      document.getElementById("titulo-materia").textContent = materia.nombre;
+
+      const nombresEscuelas = materia.escuelas.map(e => secciones[e].nombre);
+      document.getElementById("info-materia").textContent = 
+        "Escuela: " + nombresEscuelas.join(" · ");
+
+      const escuelaPrincipal = materia.escuelas[0];
+      const bcEscuela = document.getElementById("breadcrumb-escuela");
+      bcEscuela.textContent = secciones[escuelaPrincipal].nombre;
+      bcEscuela.href = `escuelas.html?seccion=${escuelaPrincipal}`;
+      document.getElementById("breadcrumb-materia").textContent = materia.nombre;
+
+      cargarPdfs();
+
+    } else {
+      document.getElementById("titulo-materia").textContent = "Materia no encontrada";
+      document.getElementById("info-materia").textContent = "Verifica el enlace o vuelve al inicio.";
+      document.getElementById("cargando").classList.add("hidden");
+    }
+
+    // =====================================================
+    // FUNCIÓN: CARGAR PDFs desde Supabase
+    // =====================================================
+    async function cargarPdfs() {
+      const cargando = document.getElementById("cargando");
+      const lista = document.getElementById("lista-pdfs");
+      const sinPdfs = document.getElementById("sin-pdfs");
+      const contador = document.getElementById("contador-pdfs");
+      const mensajeError = document.getElementById("mensaje-error");
+      const textoError = document.getElementById("texto-error");
+
+      try {
+        const { data, error } = await db
+          .from('pdfs')
+          .select('*')
+          .eq('materia_id', materiaId)
+          .eq('estado', 'aprobado')
+          .order('fecha', { ascending: false });
+
+        if (error) throw error;
+
+        cargando.classList.add("hidden");
+
+        if (!data || data.length === 0) {
+          sinPdfs.classList.remove("hidden");
+          contador.textContent = "";
+          return;
+        }
+
+        contador.textContent = `(${data.length} documento${data.length !== 1 ? 's' : ''})`;
+
+        data.forEach((pdf) => {
+          const { data: urlData } = db
+            .storage
+            .from('pdfs')
+            .getPublicUrl(pdf.archivo_url);
+
+          const urlPublica = urlData.publicUrl;
+
+          const fecha = new Date(pdf.fecha).toLocaleDateString('es-VE', {
+            year: 'numeric', month: 'short', day: 'numeric'
+          });
+
+          const card = document.createElement("div");
+          card.className = "bg-white rounded-2xl shadow-md hover:shadow-lg transition p-5 border-t-4 border-red-400";
+          card.innerHTML = `
+            <div class="flex items-start gap-3 mb-3">
+              <div class="bg-red-100 text-red-600 rounded-lg p-2 text-xl flex-shrink-0">
+                <i class="fas fa-file-pdf"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <h4 class="font-bold text-gray-800 text-sm leading-tight">${pdf.titulo}</h4>
+                <p class="text-xs text-gray-500 mt-1">${pdf.descripcion || ''}</p>
+              </div>
+            </div>
+            <div class="text-xs text-gray-400 mb-3 space-y-1">
+              ${pdf.autor ? `<p><i class="fas fa-user-edit mr-1"></i> ${pdf.autor}</p>` : ''}
+              <p><i class="fas fa-calendar mr-1"></i> ${fecha}</p>
+            </div>
+            <div class="flex gap-2">
+              <a href="${urlPublica}" target="_blank" class="flex-1 text-center bg-uc-azul hover:bg-uc-azul-claro text-white text-xs py-2 rounded-lg font-semibold transition">
+                <i class="fas fa-eye mr-1"></i> Ver
+              </a>
+              <a href="${urlPublica}" download="${pdf.archivo_nombre || pdf.titulo + '.pdf'}" class="flex-1 text-center bg-uc-dorado hover:bg-yellow-500 text-uc-azul text-xs py-2 rounded-lg font-semibold transition">
+                <i class="fas fa-download mr-1"></i> Descargar
+              </a>
+            </div>
+          `;
+          lista.appendChild(card);
+        });
+
+      } catch (error) {
+        cargando.classList.add("hidden");
+        console.error("Error cargando PDFs:", error);
+        mensajeError.classList.remove("hidden");
+        textoError.textContent = "Error al cargar documentos: " + error.message;
+      }
+    }
+
+    // =====================================================
+    // MODAL DE SUBIDA
+    // =====================================================
+    const modal = document.getElementById("modal-subida");
+    const btnAbrir = document.getElementById("btn-abrir-subida");
+    const formSubida = document.getElementById("form-subida");
+    const btnEnviar = document.getElementById("btn-enviar");
+    const mensajeProgreso = document.getElementById("mensaje-progreso");
+
+    btnAbrir.addEventListener("click", () => {
+      modal.classList.remove("hidden");
+    });
+
+    function cerrarModal() {
+      modal.classList.add("hidden");
+      formSubida.reset();
+      mensajeProgreso.classList.add("hidden");
+      mensajeProgreso.textContent = "";
+    }
+
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) cerrarModal();
+    });
+
+    // =====================================================
+    // SUBIR PDF A SUPABASE
+    // =====================================================
+    formSubida.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const titulo = document.getElementById("input-titulo").value.trim();
+      const descripcion = document.getElementById("input-descripcion").value.trim();
+      const autor = document.getElementById("input-autor").value.trim();
+      const archivo = document.getElementById("input-archivo").files[0];
+
+      if (!archivo) return;
+
+      if (archivo.size > 20 * 1024 * 1024) {
+        alert("El archivo es muy grande. Máximo 20 MB.");
+        return;
+      }
+
+      if (archivo.type !== "application/pdf") {
+        alert("Solo se permiten archivos PDF.");
+        return;
+      }
+
+      btnEnviar.disabled = true;
+      btnEnviar.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Subiendo...';
+      mensajeProgreso.classList.remove("hidden");
+      mensajeProgreso.textContent = "Subiendo archivo...";
+      mensajeProgreso.className = "text-sm text-center text-blue-600";
+
+      try {
+        const timestamp = Date.now();
+        const nombreLimpio = archivo.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+        const rutaArchivo = `${materiaId}/${timestamp}_${nombreLimpio}`;
+
+        const { error: errorSubida } = await db
+          .storage
+          .from('pdfs')
+          .upload(rutaArchivo, archivo);
+
+        if (errorSubida) throw errorSubida;
+
+        const { error: errorDB } = await db
+          .from('pdfs')
+          .insert([{
+            materia_id: materiaId,
+            titulo: titulo,
+            descripcion: descripcion || null,
+            autor: autor || null,
+            archivo_url: rutaArchivo,
+            archivo_nombre: archivo.name,
+            subido_por: autor || 'Anónimo',
+            estado: 'pendiente'
+          }]);
+
+        if (errorDB) throw errorDB;
+
+        mensajeProgreso.textContent = "¡Subido con éxito! Quedará en revisión.";
+        mensajeProgreso.className = "text-sm text-center text-green-600 font-semibold";
+
+        setTimeout(() => {
+          cerrarModal();
+          alert("✅ ¡Gracias por tu aporte!\n\nQuedará en revisión hasta que un administrador lo apruebe.");
+        }, 1500);
+
+      } catch (error) {
+        console.error("Error subiendo PDF:", error);
+        mensajeProgreso.textContent = "Error al subir: " + error.message;
+        mensajeProgreso.className = "text-sm text-center text-red-600";
+      } finally {
+        btnEnviar.disabled = false;
+        btnEnviar.innerHTML = '<i class="fas fa-paper-plane mr-2"></i> Enviar';
+      }
+    });
+  </script>
+
+</body>
+</html>
